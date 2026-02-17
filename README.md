@@ -87,6 +87,9 @@ Services are available at:
 4. Deploy the frontend with `npx vercel --prod` from `services/frontend/`.
 5. Add GitHub Actions secrets for CI/CD: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `RENDER_DEPLOY_HOOK_LARAVEL`, `RENDER_DEPLOY_HOOK_RUST`, `RENDER_DEPLOY_HOOK_CSHARP`, `RENDER_DEPLOY_HOOK_PYTHON`, `RENDER_DEPLOY_HOOK_RESEARCH`.
 
+## Developer
+***Hirotoshi Uchida***
+
 ---
 
 ## Mermaid Architecture Diagrams
