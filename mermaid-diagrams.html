@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polyglot Microservices — Architecture Specification</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap');
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #7c6af7;
+    --accent2: #38d9a9;
+    --accent3: #f7c948;
+    --accent4: #f06595;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+  header {
+    padding: 48px 64px 32px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: -60px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(124,106,247,.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  header h1 { font-size: clamp(22px, 4vw, 40px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+  header h1 span { color: var(--accent); }
+  header p { margin-top: 10px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.04em; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .badge { font-family: 'DM Mono', monospace; font-size: 11px; padding: 4px 10px; border-radius: 4px; border: 1px solid; letter-spacing: 0.06em; }
+  .b1 { border-color: var(--accent); color: var(--accent); }
+  .b2 { border-color: var(--accent2); color: var(--accent2); }
+  .b3 { border-color: var(--accent3); color: var(--accent3); }
+  .b4 { border-color: var(--accent4); color: var(--accent4); }
+  .b5 { border-color: #60a5fa; color: #60a5fa; }
+  .b6 { border-color: #fb923c; color: #fb923c; }
+  .toc { padding: 24px 64px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 6px; }
+  .toc a { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); text-decoration: none; padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px; transition: all .2s; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .section { padding: 48px 64px 0; }
+  .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+  .section-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); background: rgba(124,106,247,.1); border: 1px solid rgba(124,106,247,.3); padding: 3px 8px; border-radius: 4px; }
+  .section-header h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .section-header small { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-left: auto; }
+  .diagram-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 32px; }
+  .diagram-label { padding: 12px 20px; border-bottom: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .diagram-label .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .diagram-inner { padding: 32px; overflow-x: auto; }
+  .mermaid { display: flex; justify-content: center; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .desc { padding: 16px 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; line-height: 1.6; }
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 0 64px; }
+  @media (max-width: 768px) {
+    header, .toc, .section { padding-left: 24px; padding-right: 24px; }
+    .divider { margin: 0 24px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Polyglot <span>Microservices</span> Architecture<br>Specification</h1>
+  <p>// GENERATED MERMAID DIAGRAMS — AUTHORITATIVE DESIGN SPEC — v2 WITH RESEARCH RUNTIMES</p>
+  <div class="badge-row">
+    <span class="badge b1">Laravel 11 Gateway</span>
+    <span class="badge b2">Rust Axum Core</span>
+    <span class="badge b3">C# ASP.NET BL</span>
+    <span class="badge b4">Python FastAPI ML</span>
+    <span class="badge b5">SvelteKit Frontend</span>
+    <span class="badge b6">Zig · Mojo · Dafny · F*</span>
+    <span class="badge b1">CockroachDB Serverless</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#sec1">01 · ER Diagram</a>
+  <a href="#sec2">02 · Architecture Topology</a>
+  <a href="#sec3">03 · Auth Sequence</a>
+  <a href="#sec4">04 · Compile–Execute Sequence</a>
+  <a href="#sec5">05 · Research Runtimes Sequence</a>
+  <a href="#sec6">06 · ML Job Sequence</a>
+  <a href="#sec7">07 · Task State Machine</a>
+  <a href="#sec8">08 · Job State Machine</a>
+  <a href="#sec9">09 · Deployment Topology</a>
+</nav>
+
+<!-- 01 ER DIAGRAM -->
+<div class="section" id="sec1">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>Entity Relationship Diagram</h2>
+    <small>erDiagram · CockroachDB Serverless</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:var(--accent)"></span>erDiagram — Full DB Schema</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+erDiagram
+    USERS {
+        uuid id PK
+        string email UK
+        string password_hash
+        string name
+        string role
+        string status
+        timestamp email_verified_at
+        timestamp created_at
+        timestamp updated_at
+    }
+    OAUTH_TOKENS {
+        uuid id PK
+        uuid user_id FK
+        string provider
+        string access_token
+        string refresh_token
+        timestamp expires_at
+        timestamp created_at
+    }
+    SESSIONS {
+        uuid id PK
+        uuid user_id FK
+        string token_hash UK
+        string ip_address
+        string user_agent
+        timestamp expires_at
+        timestamp created_at
+    }
+    PROJECTS {
+        uuid id PK
+        uuid owner_id FK
+        string name
+        string description
+        string visibility
+        string status
+        timestamp created_at
+        timestamp updated_at
+    }
+    PROJECT_MEMBERS {
+        uuid id PK
+        uuid project_id FK
+        uuid user_id FK
+        string role
+        timestamp joined_at
+    }
+    TASKS {
+        uuid id PK
+        uuid project_id FK
+        uuid assignee_id FK
+        uuid creator_id FK
+        string title
+        string description
+        string priority
+        string status
+        int order_index
+        timestamp due_at
+        timestamp created_at
+        timestamp updated_at
+    }
+    FILES {
+        uuid id PK
+        uuid project_id FK
+        uuid uploader_id FK
+        string filename
+        string path
+        string mime_type
+        bigint size_bytes
+        string checksum
+        timestamp created_at
+    }
+    COMPILE_JOBS {
+        uuid id PK
+        uuid project_id FK
+        uuid user_id FK
+        string language
+        string source_code
+        string compiler_flags
+        string status
+        string output
+        string error_output
+        int exit_code
+        int duration_ms
+        int retry_count
+        timestamp created_at
+        timestamp completed_at
+    }
+    EXECUTE_JOBS {
+        uuid id PK
+        uuid compile_job_id FK
+        uuid user_id FK
+        string stdin_data
+        string stdout_data
+        string stderr_data
+        int exit_code
+        int duration_ms
+        string status
+        int retry_count
+        timestamp created_at
+        timestamp completed_at
+    }
+    RESEARCH_JOBS {
+        uuid id PK
+        uuid compile_job_id FK
+        uuid user_id FK
+        string runtime
+        string source_code
+        string flags
+        string status
+        string verification_output
+        string execution_output
+        string error_output
+        int exit_code
+        int duration_ms
+        int retry_count
+        timestamp created_at
+        timestamp completed_at
+    }
+    ML_MODELS {
+        uuid id PK
+        uuid owner_id FK
+        string name
+        string framework
+        string version
+        string status
+        string artifact_path
+        jsonb hyperparams
+        timestamp trained_at
+        timestamp created_at
+    }
+    ML_JOBS {
+        uuid id PK
+        uuid model_id FK
+        uuid user_id FK
+        string job_type
+        string status
+        jsonb config
+        jsonb result_metrics
+        string log_path
+        int duration_ms
+        int retry_count
+        timestamp created_at
+        timestamp completed_at
+    }
+    AUDIT_LOGS {
+        uuid id PK
+        uuid user_id FK
+        string service
+        string action
+        string resource_type
+        string resource_id
+        jsonb metadata
+        string ip_address
+        timestamp created_at
+    }
+
+    USERS ||--o{ OAUTH_TOKENS : "has"
+    USERS ||--o{ SESSIONS : "has"
+    USERS ||--o{ PROJECTS : "owns"
+    USERS ||--o{ PROJECT_MEMBERS : "member of"
+    PROJECTS ||--o{ PROJECT_MEMBERS : "has"
+    PROJECTS ||--o{ TASKS : "contains"
+    PROJECTS ||--o{ FILES : "has"
+    PROJECTS ||--o{ COMPILE_JOBS : "runs"
+    USERS ||--o{ TASKS : "assigned"
+    USERS ||--o{ COMPILE_JOBS : "creates"
+    COMPILE_JOBS ||--o| EXECUTE_JOBS : "produces"
+    COMPILE_JOBS ||--o{ RESEARCH_JOBS : "links to"
+    USERS ||--o{ RESEARCH_JOBS : "submits"
+    USERS ||--o{ ML_JOBS : "submits"
+    ML_MODELS ||--o{ ML_JOBS : "runs"
+    USERS ||--o{ ML_MODELS : "owns"
+    USERS ||--o{ AUDIT_LOGS : "generates"
+      </div>
+    </div>
+    <div class="desc">// 14 tables · CockroachDB Serverless (Postgres-compatible) · UUID PKs · JSONB for flexible metadata · RESEARCH_JOBS table covers Zig / Mojo / Dafny / F*</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 02 ARCHITECTURE TOPOLOGY -->
+<div class="section" id="sec2">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>Architecture Topology</h2>
+    <small>graph TD · Service Boundaries and Communication</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:var(--accent2)"></span>graph TD — Polyglot Service Topology</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+graph TD
+    CLIENT["SvelteKit Frontend — Vercel Edge"]
+
+    subgraph GATEWAY["Laravel 11 — Auth / API Gateway :8000"]
+        AUTH["AuthController — Sanctum + JWT"]
+        PROXY["GatewayController — HTTP Proxy"]
+        MW["JwtMiddleware — Throttle / CORS"]
+    end
+
+    subgraph RUST["Rust Axum — Core Service :8001"]
+        COMPILE["CompileHandler — Multi-language"]
+        EXECUTE["ExecuteHandler — Sandboxed exec"]
+    end
+
+    subgraph CSHARP["C# ASP.NET Core 8 — Business Logic :8002"]
+        PROJ["ProjectsController — CRUD + Members"]
+        TASK["TasksController — Kanban lifecycle"]
+    end
+
+    subgraph PYTHON["Python FastAPI — ML/Data Service :8003"]
+        MLJOBS["JobsRouter — Train / Infer / Eval"]
+        MLMODELS["ModelsRouter — Registry + Versioning"]
+    end
+
+    subgraph RESEARCH["Python FastAPI — Research Runtimes :8004"]
+        ZIG["ZigHandler — Systems programming"]
+        MOJO["MojoHandler — AI accelerated compute"]
+        DAFNY["DafnyHandler — Formal verification"]
+        FST["FStarHandler — Proof assistant"]
+    end
+
+    DB[("CockroachDB Serverless")]
+    REDIS[("Redis — Cache / Queues")]
+
+    CLIENT -- "HTTPS REST + HTMX" --> GATEWAY
+    AUTH -- "JWT issue/verify" --> DB
+    PROXY -- "Internal HTTP :8001" --> RUST
+    PROXY -- "Internal HTTP :8002" --> CSHARP
+    PROXY -- "Internal HTTP :8003" --> PYTHON
+    PROXY -- "Internal HTTP :8004" --> RESEARCH
+    RUST -- "SQL" --> DB
+    RUST -- "Job Queue" --> REDIS
+    CSHARP -- "SQL via EF Core" --> DB
+    PYTHON -- "SQL via SQLAlchemy" --> DB
+    PYTHON -- "Job Queue" --> REDIS
+    RESEARCH -- "SQL via SQLAlchemy" --> DB
+    RESEARCH -- "Job Queue" --> REDIS
+    GATEWAY -- "SQL via Eloquent" --> DB
+    GATEWAY -- "Cache" --> REDIS
+
+    style CLIENT fill:#1a1a2e,stroke:#7c6af7,color:#e8e8f0
+    style GATEWAY fill:#1a1a2e,stroke:#f06595,color:#e8e8f0
+    style RUST fill:#1a1a2e,stroke:#38d9a9,color:#e8e8f0
+    style CSHARP fill:#1a1a2e,stroke:#f7c948,color:#e8e8f0
+    style PYTHON fill:#1a1a2e,stroke:#60a5fa,color:#e8e8f0
+    style RESEARCH fill:#1a1a2e,stroke:#fb923c,color:#e8e8f0
+    style DB fill:#1a1a2e,stroke:#a78bfa,color:#e8e8f0
+    style REDIS fill:#1a1a2e,stroke:#f87171,color:#e8e8f0
+      </div>
+    </div>
+    <div class="desc">// All external traffic enters via Laravel Gateway · 5 internal services on private HTTP · Research runtimes service handles Zig, Mojo, Dafny, F*</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 03 AUTH SEQUENCE -->
+<div class="section" id="sec3">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>Auth Flow — Login / Logout / Refresh</h2>
+    <small>sequenceDiagram · Laravel Gateway</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:var(--accent4)"></span>sequenceDiagram — Authentication</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+sequenceDiagram
+    actor U as User
+    participant FE as SvelteKit Frontend
+    participant GW as Laravel Gateway
+    participant DB as CockroachDB
+    participant RD as Redis
+
+    rect rgb(20,20,35)
+        Note over U,RD: LOGIN FLOW
+        U->>FE: Submit credentials
+        FE->>GW: POST /api/auth/login
+        GW->>DB: SELECT user WHERE email=?
+        DB-->>GW: User record
+        GW->>GW: bcrypt verify password
+        GW->>DB: INSERT sessions
+        GW->>RD: SET user_session token TTL 86400
+        GW-->>FE: 200 access_token + refresh_token
+        FE->>FE: Store tokens in httpOnly cookie
+    end
+
+    rect rgb(20,25,20)
+        Note over U,RD: AUTHENTICATED REQUEST
+        U->>FE: Navigate to dashboard
+        FE->>GW: GET /api/dashboard with Bearer token
+        GW->>GW: JwtMiddleware validates token
+        GW->>RD: GET user_session token
+        RD-->>GW: Session data cache hit
+        GW->>GW: Proxy to downstream service
+        GW-->>FE: 200 data
+    end
+
+    rect rgb(25,20,20)
+        Note over U,RD: TOKEN REFRESH
+        FE->>GW: POST /api/auth/refresh with refresh_token
+        GW->>DB: SELECT sessions WHERE token_hash=?
+        DB-->>GW: Valid session
+        GW->>DB: UPDATE sessions new token_hash
+        GW->>RD: DEL old session SET new session TTL 86400
+        GW-->>FE: 200 new_access_token + new_refresh_token
+    end
+
+    rect rgb(25,20,25)
+        Note over U,RD: LOGOUT
+        U->>FE: Click logout
+        FE->>GW: POST /api/auth/logout
+        GW->>DB: DELETE sessions WHERE token_hash=?
+        GW->>RD: DEL user_session token
+        GW-->>FE: 200 logged out
+        FE->>FE: Clear cookies and redirect to /login
+    end
+      </div>
+    </div>
+    <div class="desc">// Sanctum-based JWT · Redis session cache TTL 24h · Refresh token rotation · httpOnly cookies for XSS protection</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 04 COMPILE-EXECUTE SEQUENCE -->
+<div class="section" id="sec4">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>Compile and Execute Pipeline</h2>
+    <small>sequenceDiagram · Rust Core Service</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:var(--accent2)"></span>sequenceDiagram — Compile and Execute</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+sequenceDiagram
+    actor U as User
+    participant FE as SvelteKit Frontend
+    participant GW as Laravel Gateway
+    participant RS as Rust Core Service
+    participant DB as CockroachDB
+    participant RD as Redis
+
+    U->>FE: Write code and click Compile
+    FE->>GW: POST /api/compile
+    GW->>GW: Auth middleware check
+    GW->>RS: POST /compile
+    RS->>DB: INSERT compile_jobs status=pending
+    RS->>RD: LPUSH compile_queue job_id
+    RS-->>GW: 202 job_id status=queued
+    GW-->>FE: 202 job_id
+
+    FE->>GW: GET /api/compile/job_id/status polling
+
+    loop Worker Loop
+        RS->>RD: BRPOP compile_queue
+        RS->>RS: Spawn sandboxed compiler process
+        RS->>RS: Capture stdout stderr exit_code
+        RS->>DB: UPDATE compile_jobs status=completed
+        RS->>RD: SET compile_result job_id TTL 3600
+    end
+
+    GW-->>FE: 200 status=completed output error_output
+
+    alt Compilation succeeded
+        U->>FE: Click Run
+        FE->>GW: POST /api/execute job_id + stdin
+        GW->>RS: POST /execute
+        RS->>DB: SELECT compile_jobs WHERE id=?
+        RS->>RS: Spawn sandboxed execution via seccomp
+        RS->>DB: INSERT execute_jobs status=running
+        RS->>RS: Stream stdout stderr in real time
+        RS->>DB: UPDATE execute_jobs status=completed
+        RS-->>GW: 200 stdout stderr exit_code duration_ms
+        GW-->>FE: 200 result
+    else Compilation failed
+        GW-->>FE: 200 status=failed error_output
+    end
+      </div>
+    </div>
+    <div class="desc">// Async job queue via Redis · Sandboxed execution Linux namespaces + seccomp · Real-time streaming via SSE · Full job history in CockroachDB</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 05 RESEARCH RUNTIMES SEQUENCE -->
+<div class="section" id="sec5">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>Research Runtimes — Zig / Mojo / Dafny / F*</h2>
+    <small>sequenceDiagram · Python FastAPI Research Service :8004</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:#fb923c"></span>sequenceDiagram — Research Runtime Pipeline</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+sequenceDiagram
+    actor U as User
+    participant FE as SvelteKit Frontend
+    participant GW as Laravel Gateway
+    participant RR as Research Runtimes Service
+    participant DB as CockroachDB
+    participant RD as Redis
+
+    rect rgb(20,20,35)
+        Note over U,RD: SUBMIT RESEARCH JOB
+        U->>FE: Choose runtime Zig Mojo Dafny or FStar and write source
+        FE->>GW: POST /api/research/compile runtime + source_code + flags
+        GW->>GW: Auth middleware check
+        GW->>RR: POST /compile runtime + source_code + flags + user_id
+        RR->>DB: INSERT research_jobs status=queued
+        RR->>RD: LPUSH research_queue job_id
+        RR-->>GW: 202 job_id status=queued
+        GW-->>FE: 202 job_id
+    end
+
+    rect rgb(20,25,20)
+        Note over U,RD: ZIG EXECUTION PATH
+        RR->>RD: BRPOP research_queue
+        RR->>DB: UPDATE research_jobs status=running
+        RR->>RR: zig build-exe source.zig -femit-bin=output
+        RR->>RR: Capture verification + compile output
+        RR->>RR: Execute binary in sandbox
+        RR->>DB: UPDATE research_jobs status=completed output=stdout
+        RR->>RD: SET research_result job_id TTL 3600
+    end
+
+    rect rgb(25,25,20)
+        Note over U,RD: MOJO EXECUTION PATH
+        RR->>RD: BRPOP research_queue
+        RR->>DB: UPDATE research_jobs status=running
+        RR->>RR: mojo run source.mojo
+        RR->>RR: Capture stdout stderr exit_code
+        RR->>DB: UPDATE research_jobs status=completed
+    end
+
+    rect rgb(20,25,25)
+        Note over U,RD: DAFNY VERIFICATION PATH
+        RR->>RD: BRPOP research_queue
+        RR->>DB: UPDATE research_jobs status=running
+        RR->>RR: dafny verify source.dfy
+        RR->>RR: Parse verification result proof obligations
+        RR->>RR: If verified dafny run source.dfy
+        RR->>DB: UPDATE research_jobs verification_output + execution_output
+    end
+
+    rect rgb(25,20,25)
+        Note over U,RD: FSTAR PROOF PATH
+        RR->>RD: BRPOP research_queue
+        RR->>DB: UPDATE research_jobs status=running
+        RR->>RR: fstar.exe source.fst
+        RR->>RR: Parse proof obligations and SMT output
+        RR->>DB: UPDATE research_jobs verification_output status=completed
+        GW-->>FE: 200 verification_output execution_output exit_code
+    end
+      </div>
+    </div>
+    <div class="desc">// Four research runtimes handled by dedicated Python FastAPI service :8004 · Zig systems programming · Mojo AI compute · Dafny formal verification + execution · F* proof assistant</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 06 ML JOB SEQUENCE -->
+<div class="section" id="sec6">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>ML Job Flow — Train / Infer / Evaluate</h2>
+    <small>sequenceDiagram · Python FastAPI ML Service</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:#60a5fa"></span>sequenceDiagram — ML Pipeline</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+sequenceDiagram
+    actor U as User
+    participant FE as SvelteKit Frontend
+    participant GW as Laravel Gateway
+    participant ML as Python FastAPI ML
+    participant DB as CockroachDB
+    participant RD as Redis
+
+    rect rgb(20,20,35)
+        Note over U,RD: SUBMIT TRAINING JOB
+        U->>FE: Configure model and dataset
+        FE->>GW: POST /api/ml/jobs model_id job_type=train config
+        GW->>ML: POST /jobs model_id job_type config user_id
+        ML->>DB: INSERT ml_jobs status=queued
+        ML->>RD: LPUSH ml_queue job_id
+        ML-->>GW: 202 job_id
+        GW-->>FE: 202 job_id
+    end
+
+    rect rgb(20,25,20)
+        Note over U,RD: TRAINING EXECUTION
+        ML->>RD: BRPOP ml_queue
+        ML->>DB: UPDATE ml_jobs status=running
+        ML->>ML: Load dataset and init model framework
+        ML->>ML: Training loop over epochs
+        ML->>DB: UPDATE ml_jobs result_metrics loss accuracy
+        ML->>DB: UPDATE ml_models status=trained artifact_path=?
+        ML->>RD: SET ml_result job_id TTL 7200
+        ML->>DB: UPDATE ml_jobs status=completed
+    end
+
+    rect rgb(25,25,20)
+        Note over U,RD: INFERENCE REQUEST
+        U->>FE: Submit inference input
+        FE->>GW: POST /api/ml/jobs model_id job_type=infer
+        GW->>ML: POST /jobs model_id job_type=infer input_data
+        ML->>DB: SELECT ml_models WHERE id=? AND status=trained
+        ML->>ML: Load model artifact and run inference
+        ML->>DB: INSERT ml_jobs status=completed result_metrics
+        ML-->>GW: 200 predictions confidence_scores
+        GW-->>FE: 200 result
+    end
+      </div>
+    </div>
+    <div class="desc">// Async training via Redis queue · Synchronous inference for low latency · Model artifact storage · Metrics tracking in JSONB</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 07 TASK STATE MACHINE -->
+<div class="section" id="sec7">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>Task Lifecycle State Machine</h2>
+    <small>stateDiagram-v2 · C# Business Logic Service</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:var(--accent3)"></span>stateDiagram-v2 — Task States</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+stateDiagram-v2
+    [*] --> Backlog : Task created
+
+    Backlog --> Todo : Sprint planning
+    Backlog --> Cancelled : Removed from scope
+
+    Todo --> InProgress : Developer picks up
+    Todo --> Backlog : De-prioritized
+
+    InProgress --> InReview : PR submitted
+    InProgress --> Blocked : Dependency found
+    InProgress --> Todo : Reassigned
+
+    Blocked --> InProgress : Dependency resolved
+    Blocked --> Cancelled : Unresolvable
+
+    InReview --> Done : Review approved
+    InReview --> InProgress : Changes requested
+    InReview --> Blocked : Blocker found in review
+
+    Done --> [*]
+    Cancelled --> [*]
+      </div>
+    </div>
+    <div class="desc">// 6 states · Managed by C# ASP.NET TasksController · Transitions validated server-side · Audit log on every transition</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 08 JOB STATE MACHINE -->
+<div class="section" id="sec8">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>Job State Machine — Compile / ML / Research</h2>
+    <small>stateDiagram-v2 · Rust Core + Python ML + Research Runtimes</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:var(--accent2)"></span>stateDiagram-v2 — Job Lifecycle</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+stateDiagram-v2
+    [*] --> Queued : Job submitted
+
+    Queued --> Running : Worker picks up from Redis queue
+    Queued --> Cancelled : User cancels before pickup
+
+    Running --> Completed : Success exit_code equals 0
+    Running --> Failed : Error or timeout or OOM
+    Running --> Cancelled : User cancels mid-run
+
+    Failed --> Queued : Retry if retry_count less than 3
+    Failed --> [*] : Max retries exceeded
+
+    Completed --> [*]
+    Cancelled --> [*]
+      </div>
+    </div>
+    <div class="desc">// Shared state machine for compile_jobs execute_jobs research_jobs and ml_jobs · Max 3 retries · Timeout enforced at sandbox level · Applies to Zig Mojo Dafny and F* jobs identically</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 09 DEPLOYMENT TOPOLOGY -->
+<div class="section" id="sec9">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>Deployment Topology</h2>
+    <small>graph TD · Vercel + Render + CockroachDB Cloud</small>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-label"><span class="dot" style="background:var(--accent3)"></span>graph TD — Production Deployment</div>
+    <div class="diagram-inner">
+      <div class="mermaid">
+graph TD
+    subgraph VERCEL["Vercel — Edge Network"]
+        FE["SvelteKit App — SSR + Edge Functions"]
+    end
+
+    subgraph RENDER["Render — Docker Services"]
+        GW["laravel-gateway — Docker :8000"]
+        RS["rust-core — Docker :8001"]
+        CS["csharp-business — Docker :8002"]
+        PY["python-ml — Docker :8003"]
+        RR["research-runtimes — Docker :8004"]
+    end
+
+    subgraph DATA["Data Layer"]
+        CRDB["CockroachDB Serverless Free Tier"]
+        RED["Redis — Render Redis or Upstash"]
+    end
+
+    subgraph CI["GitHub Actions"]
+        BUILD["Build and Test All Services"]
+        DEPLOY_V["Deploy Frontend via vercel --prod"]
+        DEPLOY_R["Deploy Services via render deploy hook"]
+    end
+
+    INTERNET["Internet"] --> FE
+    FE -- "HTTPS API calls" --> GW
+    GW --> RS
+    GW --> CS
+    GW --> PY
+    GW --> RR
+    RS --> CRDB
+    CS --> CRDB
+    PY --> CRDB
+    GW --> CRDB
+    RR --> CRDB
+    RS --> RED
+    PY --> RED
+    RR --> RED
+    GW --> RED
+
+    CI --> DEPLOY_V
+    CI --> DEPLOY_R
+    DEPLOY_V --> FE
+    DEPLOY_R --> RENDER
+
+    style VERCEL fill:#1a1028,stroke:#7c6af7,color:#e8e8f0
+    style RENDER fill:#0a1a28,stroke:#38d9a9,color:#e8e8f0
+    style DATA fill:#1a1a0a,stroke:#f7c948,color:#e8e8f0
+    style CI fill:#0a1a0a,stroke:#60a5fa,color:#e8e8f0
+      </div>
+    </div>
+    <div class="desc">// Zero-cost production: Vercel Hobby + Render Free Docker + CockroachDB Serverless Free · GitHub Actions free tier CI/CD · research-runtimes service requires runtime toolchains installed in Docker image</div>
+  </div>
+</div>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  securityLevel: 'loose',
+  themeVariables: {
+    primaryColor: '#1e1e2e',
+    primaryTextColor: '#e8e8f0',
+    primaryBorderColor: '#7c6af7',
+    lineColor: '#6b6b85',
+    secondaryColor: '#111118',
+    tertiaryColor: '#0a0a0f',
+    background: '#0a0a0f',
+    mainBkg: '#111118',
+    nodeBorder: '#7c6af7',
+    clusterBkg: '#0a0a0f',
+    titleColor: '#e8e8f0',
+    edgeLabelBackground: '#111118',
+    attributeBackgroundColorEven: '#111118',
+    attributeBackgroundColorOdd: '#0a0a0f'
+  },
+  er: {
+    diagramPadding: 20,
+    layoutDirection: 'TB',
+    minEntityWidth: 100,
+    minEntityHeight: 75,
+    entityPadding: 15,
+    useMaxWidth: true
+  },
+  sequence: {
+    diagramMarginX: 20,
+    diagramMarginY: 10,
+    actorMargin: 50,
+    width: 150,
+    height: 65,
+    boxMargin: 10,
+    useMaxWidth: true
+  },
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true,
+    curve: 'basis'
+  },
+  stateDiagram: {
+    useMaxWidth: true
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+services:
+  - type: web
+    name: laravel-gateway
+    runtime: docker
+    dockerfilePath: services/laravel-gateway/Dockerfile
+    dockerContext: services/laravel-gateway
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_PORT
+        value: "26257"
+      - key: DB_DATABASE
+        value: polyglot
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: verify-full
+      - key: CACHE_DRIVER
+        value: redis
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          type: redis
+          property: connectionString
+      - key: RUST_CORE_URL
+        fromService:
+          name: rust-core
+          type: web
+          property: url
+      - key: CSHARP_BUSINESS_URL
+        fromService:
+          name: csharp-business
+          type: web
+          property: url
+      - key: PYTHON_ML_URL
+        fromService:
+          name: python-ml
+          type: web
+          property: url
+      - key: RESEARCH_RUNTIMES_URL
+        fromService:
+          name: research-runtimes
+          type: web
+          property: url
+
+  - type: web
+    name: rust-core
+    runtime: docker
+    dockerfilePath: services/rust-core/Dockerfile
+    dockerContext: services/rust-core
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          type: redis
+          property: connectionString
+      - key: PORT
+        value: "8001"
+
+  - type: web
+    name: csharp-business
+    runtime: docker
+    dockerfilePath: services/csharp-business/Dockerfile
+    dockerContext: services/csharp-business
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: PORT
+        value: "8002"
+
+  - type: web
+    name: python-ml
+    runtime: docker
+    dockerfilePath: services/python-ml/Dockerfile
+    dockerContext: services/python-ml
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          type: redis
+          property: connectionString
+      - key: PORT
+        value: "8003"
+      - key: ENV
+        value: production
+
+  - type: web
+    name: research-runtimes
+    runtime: docker
+    dockerfilePath: services/research-runtimes/Dockerfile
+    dockerContext: services/research-runtimes
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          type: redis
+          property: connectionString
+      - key: PORT
+        value: "8004"
+      - key: ENV
+        value: production
+
+  - type: redis
+    name: redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
