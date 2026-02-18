@@ -51,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
     let db = PgPool::connect(&database_url).await?;
     let redis = RedisClient::open(redis_url)?;
 
-    sqlx::migrate!("./migrations").run(&db).await?;
+//  sqlx::migrate!("./migrations").run(&db).await?;
 
     let state = Arc::new(AppState { db, redis: redis.clone() });
 
