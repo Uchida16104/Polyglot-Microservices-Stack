@@ -1,0 +1,43 @@
+---
+title: Request Sequence Diagram
+---
+sequenceDiagram
+    participant B as Browser
+    participant N as Next.js (Vercel)
+    participant A as Actix-Web (Render :8080)
+    participant P as Python FastAPI (:8001)
+    participant X as C++ / Zig subprocess
+    participant D as C# / Dafny / F* subprocess
+
+    B->>N: GET /
+    N-->>B: Full HTML (SSR) with HTMX+Alpine+Hyperscript
+
+    note over B,N: HTMX interaction
+    B->>A: hx-get /health  (direct HTMX call)
+    A-->>B: JSON {status:"healthy"}
+
+    note over B,N: React fetch via proxy
+    B->>N: fetch /api/proxy/rust
+    N->>A: GET /api/rust
+    A-->>N: {language:"Rust", result:"..."}
+    N-->>B: JSON forwarded
+
+    B->>N: fetch /api/proxy/python
+    N->>A: GET /api/python
+    A->>P: GET /compute
+    P-->>A: {result:"Python3 | fib(15)=610 ..."}
+    A-->>N: LangResponse JSON
+    N-->>B: JSON
+
+    B->>N: fetch /api/proxy/cpp
+    N->>A: GET /api/cpp
+    A->>X: g++ compile & execute
+    X-->>A: stdout
+    A-->>N: LangResponse JSON
+    N-->>B: JSON
+
+    B->>N: POST /api/sqljs
+    N-->>B: {rows:[{answer:42}], engine:"sql.js"}
+
+    B->>N: POST /api/phpjs
+    N-->>B: {output:"PHP-WASM | 1024 ...", exit_code:0}

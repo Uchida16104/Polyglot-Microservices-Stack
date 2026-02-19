@@ -1,0 +1,23 @@
+---
+title: Backend Language Dispatch Flowchart
+---
+flowchart LR
+    REQ([HTTPS Request]) --> CORS[CORS Middleware]
+    CORS --> LOG[Logger Middleware]
+    LOG --> ROUTER{Route Match?}
+
+    ROUTER -- GET /health        --> HH[Health Handler]
+    ROUTER -- GET /api/rust      --> RH[Rust Native Handler]
+    ROUTER -- GET /api/cpp       --> CPP[C++ Handler\ng++ compile+run]
+    ROUTER -- GET /api/csharp    --> CS[C# Handler\ndotnet run]
+    ROUTER -- GET /api/python    --> PY[Python Handler\nreqwest→FastAPI]
+    ROUTER -- GET /api/zig       --> ZIG[Zig Handler\nzig run]
+    ROUTER -- GET /api/mojo      --> MOJO[Mojo Handler\nmojo run]
+    ROUTER -- GET /api/fstar     --> FST[F* Handler\nfstar.exe]
+    ROUTER -- GET /api/dafny     --> DAF[Dafny Handler\ndafny verify]
+    ROUTER -- GET /api/all       --> ALL[All Handler\nparallel dispatch]
+
+    HH & RH & CPP & CS & PY & ZIG & MOJO & FST & DAF & ALL --> RESP([JSON LangResponse])
+
+    style REQ fill:#0ea5e9,color:#fff
+    style RESP fill:#22c55e,color:#fff

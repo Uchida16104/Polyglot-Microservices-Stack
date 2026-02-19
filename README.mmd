@@ -1,0 +1,30 @@
+---
+title: Polyglot Web Service — README
+---
+flowchart TD
+    subgraph Vercel["Vercel (Frontend)"]
+        NX["Next.js 14"]
+        NX --> HTMX["HTMX 1.9"]
+        NX --> TW["TailwindCSS 3"]
+        NX --> HS["Hyperscript 0.9"]
+        NX --> ALP["Alpine.js 3"]
+        NX --> SQLJS["SQL.js (WASM SQLite)"]
+        NX --> PHPJS["PHP-WASM (@php-wasm/node)"]
+    end
+
+    subgraph Render["Render (Backend)"]
+        ACTIX["Rust / Actix-Web 4 :8080"]
+        PYAPI["Python3 / FastAPI :8001"]
+        ACTIX --> CPP["C++ (g++ subprocess)"]
+        ACTIX --> CS["C# (.NET 8 CLI subprocess)"]
+        ACTIX --> PYAPI
+        ACTIX --> ZIG["Zig 0.13 (subprocess)"]
+        ACTIX --> MOJO["Mojo (subprocess, Magic SDK)"]
+        ACTIX --> FST["F* (fstar.exe subprocess)"]
+        ACTIX --> DAF["Dafny (dafny CLI subprocess)"]
+    end
+
+    Vercel -- "HTTPS REST/JSON" --> Render
+
+    style Vercel fill:#0c4a6e,stroke:#0ea5e9
+    style Render fill:#1c1917,stroke:#f97316

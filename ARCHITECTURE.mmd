@@ -1,0 +1,25 @@
+---
+title: C4 Context — Polyglot Web Service
+---
+C4Context
+    title Polyglot Web Service Architecture
+
+    Person(user, "End User", "Accesses the app via any modern browser")
+
+    System_Boundary(vercel, "Vercel Edge") {
+        System(frontend, "Next.js App",
+            "SSR/CSR: HTMX, Alpine.js, Hyperscript, TailwindCSS\nAPI Routes: SQL.js (WASM), PHP-WASM")
+    }
+
+    System_Boundary(render, "Render Cloud") {
+        System(actix, "Rust Actix-Web :8080",
+            "Primary API gateway\nDispatches to: C++, C#, Python, Zig, Mojo, F*, Dafny")
+        System(fastapi, "Python3 FastAPI :8001",
+            "Sieve of Eratosthenes, Fibonacci\nManaged by Render separately")
+        SystemDb(sqlitedb, "SQLite (file-based)", "Persisted queries via Rust")
+    }
+
+    Rel(user, frontend, "HTTPS", "Browser")
+    Rel(frontend, actix, "HTTPS REST/JSON", "/api/* proxy")
+    Rel(actix, fastapi, "HTTP", "/compute")
+    Rel(actix, sqlitedb, "SQL", "Read/Write")

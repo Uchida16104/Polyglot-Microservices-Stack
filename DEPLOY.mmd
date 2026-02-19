@@ -1,0 +1,18 @@
+---
+title: Deployment Flow
+---
+flowchart TD
+    DEV["Local Development\ngit push origin main"]
+
+    subgraph CI["CI/CD — No Dockerfile"]
+        R1["Render detects push\n(render.yaml)"]
+        R1 --> R2["rust-actix service:\nbash build.sh\n→ cargo build --release"]
+        R1 --> R3["python-fastapi service:\npip install -r requirements.txt\n→ uvicorn main:app"]
+        V1["Vercel detects push\n(vercel.json)"]
+        V1 --> V2["cd frontend/nextjs\nnpm install && npm run build"]
+    end
+
+    DEV --> CI
+    R2 --> PROD_B["Render backend live\nhttps://polyglot-backend.onrender.com"]
+    R3 --> PROD_PY["Render FastAPI live\nhttps://python-fastapi.onrender.com"]
+    V2 --> PROD_F["Vercel frontend live\nhttps://polyglot.vercel.app"]
