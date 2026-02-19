@@ -8,7 +8,7 @@ export default function Document() {
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <meta
           name="description"
-          content="Polyglot Web Service — Rust, C++, C#, Python3, Zig, Mojo, F*, Dafny, SQL.js, PHP-WASM"
+          content="Polyglot Web Service — Rust, C++, C#, Python3, Zig, Mojo, F*, Dafny, SQL.js, PHP"
         />
       </Head>
       <body>

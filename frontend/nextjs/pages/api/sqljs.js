@@ -9,7 +9,7 @@ async function getSQL() {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed — use POST" });
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   const { query } = req.body || {};
@@ -30,9 +30,9 @@ export default async function handler(req, res) {
       )
     `);
 
-    db.run(`INSERT INTO compute_results (language, result) VALUES (?, ?)`, [
+    db.run("INSERT INTO compute_results (language, result) VALUES (?, ?)", [
       "SQL.js",
-      "SQLite WASM running in Node.js via sql.js 1.12",
+      "SQLite WASM running in Node.js via sql.js",
     ]);
 
     const stmt = db.prepare(query);

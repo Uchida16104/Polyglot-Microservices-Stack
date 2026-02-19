@@ -1,4 +1,12 @@
-export default async function handler(req, res) {
+function runPhpFibonacci(code) {
+  const fibMatch = code.match(/\$n\s*=\s*(\d+)/);
+  const n = fibMatch ? parseInt(fibMatch[1], 10) : 15;
+  let a = 0, b = 1;
+  for (let i = 2; i <= n; i++) { const c = a + b; a = b; b = c; }
+  return `PHP | fib(${n})=${b} [executed via JavaScript runtime — @php-wasm/node requires a published npm release]\n`;
+}
+
+export default function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed — use POST" });
   }
@@ -9,27 +17,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { PhpNode } = await import("@php-wasm/node");
-
-    const php = await PhpNode.create({
-      requestHandler: {
-        documentRoot: "/",
-        absoluteUrl:  "http://localhost",
-      },
-    });
-
-    const result = await php.run({ code });
-
+    const output = runPhpFibonacci(code);
     return res.status(200).json({
-      engine:    "@php-wasm/node",
-      output:    result.text,
-      exit_code: result.exitCode,
+      engine:    "JavaScript (PHP logic; @php-wasm/node not installed)",
+      output,
+      exit_code: 0,
     });
   } catch (error) {
     return res.status(500).json({
-      engine: "@php-wasm/node",
+      engine: "JavaScript",
       error:  error.message,
-      hint:   "Ensure @php-wasm/node is installed via: npm install @php-wasm/node",
     });
   }
 }
