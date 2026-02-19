@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import math
 import time
-from typing import Any
+from typing import Any, Dict, List
 
 app = FastAPI(title="Polyglot Python FastAPI", version="1.0.0")
 
@@ -19,7 +19,7 @@ class ComputeResponse(BaseModel):
     language: str
     result: str
     duration_ms: float
-    extras: dict[str, Any] = {}
+    extras: Dict[str, Any] = {}
 
 
 def fibonacci(n: int) -> int:
@@ -31,7 +31,7 @@ def fibonacci(n: int) -> int:
     return b
 
 
-def sieve_of_eratosthenes(limit: int) -> list[int]:
+def sieve_of_eratosthenes(limit: int) -> List[int]:
     if limit < 2:
         return []
     sieve = bytearray([1]) * (limit + 1)

@@ -12,29 +12,27 @@ apt-get install -y --no-install-recommends \
 echo "==> Installing .NET 8 SDK..."
 wget -qO /tmp/dotnet-install.sh https://dot.net/v1/dotnet-install.sh
 chmod +x /tmp/dotnet-install.sh
-/tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/local/dotnet 2>/dev/null || true
-export PATH="/usr/local/dotnet:$PATH"
-echo "export PATH=/usr/local/dotnet:\$PATH" >> ~/.bashrc || true
+/tmp/dotnet-install.sh --channel 8.0 --install-dir /opt/render/project/dotnet 2>/dev/null || true
+export PATH="/opt/render/project/dotnet:$PATH"
 
 echo "==> Installing Zig 0.13.0..."
 ZIG_VERSION="0.13.0"
-ZIG_DIR="/usr/local/zig"
-if [ ! -f "$ZIG_DIR/zig" ]; then
+ZIG_DIR="/opt/render/project/zig"
+if [ ! -f "${ZIG_DIR}/zig" ]; then
     wget -qO /tmp/zig.tar.xz \
         "https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz"
-    mkdir -p /usr/local/zig-tmp
-    tar -xf /tmp/zig.tar.xz -C /usr/local/
-    mv /usr/local/zig-linux-x86_64-${ZIG_VERSION} "$ZIG_DIR" 2>/dev/null || true
+    tar -xf /tmp/zig.tar.xz -C /tmp/
+    mv "/tmp/zig-linux-x86_64-${ZIG_VERSION}" "${ZIG_DIR}"
     rm -f /tmp/zig.tar.xz
 fi
-export PATH="$ZIG_DIR:$PATH"
-echo "export PATH=$ZIG_DIR:\$PATH" >> ~/.bashrc || true
+export PATH="${ZIG_DIR}:$PATH"
 
 echo "==> Compiling C++ shared library..."
 g++ -O2 -shared -fPIC -o libcompute.so cpp/compute.cpp || echo "C++ compile warning (non-fatal)"
 
 echo "==> Building C# project..."
-dotnet build csharp/Processor.csproj -c Release 2>/dev/null || echo "dotnet build warning (non-fatal)"
+/opt/render/project/dotnet/dotnet build csharp/Processor.csproj -c Release 2>/dev/null \
+    || echo "dotnet build warning (non-fatal)"
 
 echo "==> Building Rust release binary..."
 cargo build --release

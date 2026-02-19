@@ -15,6 +15,12 @@ services:
           name: python-fastapi
           type: web
           property: hostport
+      - key: ZIG_PATH
+        value: /opt/render/project/zig/zig
+      - key: DOTNET_PATH
+        value: /opt/render/project/dotnet/dotnet
+      - key: DOTNET_ROOT
+        value: /opt/render/project/dotnet
     healthCheckPath: /health
 
   - type: web
@@ -24,6 +30,8 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: PORT
-        value: "8001"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
     healthCheckPath: /health
