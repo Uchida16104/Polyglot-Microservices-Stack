@@ -1,5 +1,8 @@
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracingIncludes: {
+    "/api/sqljs": ["./node_modules/sql.js/dist/sql-wasm.wasm"],
+  },
   async headers() {
     return [
       {

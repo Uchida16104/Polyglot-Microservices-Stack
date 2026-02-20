@@ -1,9 +1,14 @@
+const path = require("path");
+
 let SQLInstance = null;
 
 async function getSQL() {
   if (SQLInstance) return SQLInstance;
   const initSqlJs = (await import("sql.js")).default;
-  SQLInstance = await initSqlJs();
+  const wasmPath = require.resolve("sql.js/dist/sql-wasm.wasm");
+  SQLInstance = await initSqlJs({
+    locateFile: () => wasmPath,
+  });
   return SQLInstance;
 }
 

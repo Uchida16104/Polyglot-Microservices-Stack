@@ -14,7 +14,7 @@ services:
         fromService:
           name: python-fastapi
           type: web
-          property: hostport
+          property: url
       - key: ZIG_PATH
         value: /opt/render/project/zig/zig
       - key: DOTNET_PATH
