@@ -15,9 +15,10 @@ const LANGS = [
   { key: "dafny",  label: "Dafny",           color: "text-teal-400",   emoji: "\u{1F510}" },
 ];
 
-const MAX_RETRIES   = 5;
-const RETRY_DELAY   = 6000;
-const WARMUP_WAIT   = 3000;
+const MAX_RETRIES  = 5;
+const RETRY_DELAY  = 6000;
+const WARMUP_MAX   = 10;
+const WARMUP_DELAY = 6000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -69,21 +70,38 @@ export default function Home() {
 
   const callAll = async () => {
     if (!warmupDone.current) {
-      setWarmupMsg("Warming up backend service via /health...");
-      try {
-        await fetch(BACKEND + "/health");
-        await sleep(WARMUP_WAIT);
-        warmupDone.current = true;
-        setWarmupMsg("Backend ready — running all languages.");
-        await sleep(500);
-      } catch (_) {
-        setWarmupMsg("Health check failed — retries will run automatically.");
+      let warmed = false;
+      for (let i = 0; i < WARMUP_MAX; i++) {
+        setWarmupMsg(
+          i === 0
+            ? "Waking backend service via /health..."
+            : `Backend starting — attempt ${i + 1}/${WARMUP_MAX}...`
+        );
+        try {
+          const controller = new AbortController();
+          const tid = setTimeout(() => controller.abort(), 5000);
+          const r = await fetch(BACKEND + "/health", { signal: controller.signal });
+          clearTimeout(tid);
+          if (r.ok) {
+            warmed = true;
+            break;
+          }
+        } catch (_) {}
+        if (i < WARMUP_MAX - 1) await sleep(WARMUP_DELAY);
       }
+      warmupDone.current = warmed;
+      setWarmupMsg(
+        warmed
+          ? "Backend ready — running all languages."
+          : "Backend may still be starting — requests will retry automatically."
+      );
+      await sleep(600);
     } else {
       setWarmupMsg("");
     }
+
     LANGS.forEach(({ key }) => callLang(key));
-    setTimeout(() => setWarmupMsg(""), 5000);
+    setTimeout(() => setWarmupMsg(""), 6000);
   };
 
   const runSql = async () => {
