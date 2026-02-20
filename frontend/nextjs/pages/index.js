@@ -123,8 +123,18 @@ export default function Home() {
               Alpine.js manages reactive state entirely in HTML.
             </p>
             <div className="flex items-center gap-3 flex-wrap">
-              <button className="btn-primary" x-on:click="count++; history.push(count)">Increment</button>
-              <button className="btn-outline" x-on:click="count = 0; history = []">Reset</button>
+              <button
+                className="btn-primary"
+                {...{"x-on:click": "count++; history.push(count)"}}
+              >
+                Increment
+              </button>
+              <button
+                className="btn-outline"
+                {...{"x-on:click": "count = 0; history = []"}}
+              >
+                Reset
+              </button>
               <span className="text-brand-500 font-mono text-2xl font-bold" x-text="count" />
             </div>
             <p className="text-slate-500 text-xs mt-3">
