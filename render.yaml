@@ -21,6 +21,10 @@ services:
         value: /opt/render/project/dotnet/dotnet
       - key: DOTNET_ROOT
         value: /opt/render/project/dotnet
+      - key: DOTNET_NOLOGO
+        value: "1"
+      - key: DOTNET_CLI_TELEMETRY_OPTOUT
+        value: "1"
     healthCheckPath: /health
 
   - type: web
