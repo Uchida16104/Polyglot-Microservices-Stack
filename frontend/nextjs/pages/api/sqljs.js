@@ -1,9 +1,14 @@
+const SQL_WASM_CDN =
+  "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/sql-wasm.wasm";
+
 let SQLInstance = null;
 
 async function getSQL() {
   if (SQLInstance) return SQLInstance;
   const initSqlJs = (await import("sql.js")).default;
-  SQLInstance = await initSqlJs();
+  SQLInstance = await initSqlJs({
+    locateFile: () => SQL_WASM_CDN,
+  });
   return SQLInstance;
 }
 
@@ -49,7 +54,7 @@ export default async function handler(req, res) {
     db.close();
 
     return res.status(200).json({
-      engine:              "sql.js (SQLite WebAssembly)",
+      engine:              "sql.js (SQLite WebAssembly via CDN WASM)",
       query,
       rows,
       total_rows_in_table: total,

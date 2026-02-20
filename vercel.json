@@ -4,7 +4,7 @@
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "env": {
-    "NEXT_PUBLIC_BACKEND_URL": "https://polyglot-backend.onrender.com"
+    "NEXT_PUBLIC_BACKEND_URL": "https://polyglot-backend-2u6p.onrender.com"
   },
   "headers": [
     {
