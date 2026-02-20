@@ -26,7 +26,7 @@ export default function Home() {
   const callLang = useCallback(async (key) => {
     setLoading((p) => ({ ...p, [key]: true }));
     try {
-      const r    = await fetch("/api/proxy/" + key);
+      const r    = await fetch(BACKEND + "/api/" + key);
       const data = await r.json();
       setResults((p) => ({ ...p, [key]: data }));
     } catch (e) {
