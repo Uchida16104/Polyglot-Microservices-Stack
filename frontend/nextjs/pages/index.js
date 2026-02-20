@@ -1,19 +1,27 @@
 import Head from "next/head";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import LanguageCard from "../components/LanguageCard";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
 const LANGS = [
-  { key: "rust",   label: "Rust",           color: "text-orange-400", emoji: "\u{1F980}" },
-  { key: "cpp",    label: "C++",            color: "text-blue-400",   emoji: "\u{2699}" },
-  { key: "csharp", label: "C#",             color: "text-purple-400", emoji: "\u{1F537}" },
-  { key: "python", label: "Python3/FastAPI",color: "text-yellow-400", emoji: "\u{1F40D}" },
-  { key: "zig",    label: "Zig",            color: "text-amber-400",  emoji: "\u{26A1}" },
-  { key: "mojo",   label: "Mojo",           color: "text-red-400",    emoji: "\u{1F525}" },
-  { key: "fstar",  label: "F*",             color: "text-green-400",  emoji: "\u{2705}" },
-  { key: "dafny",  label: "Dafny",          color: "text-teal-400",   emoji: "\u{1F510}" },
+  { key: "rust",   label: "Rust",            color: "text-orange-400", emoji: "\u{1F980}" },
+  { key: "cpp",    label: "C++",             color: "text-blue-400",   emoji: "\u{2699}"  },
+  { key: "csharp", label: "C#",              color: "text-purple-400", emoji: "\u{1F537}" },
+  { key: "python", label: "Python3/FastAPI", color: "text-yellow-400", emoji: "\u{1F40D}" },
+  { key: "zig",    label: "Zig",             color: "text-amber-400",  emoji: "\u{26A1}"  },
+  { key: "mojo",   label: "Mojo",            color: "text-red-400",    emoji: "\u{1F525}" },
+  { key: "fstar",  label: "F*",              color: "text-green-400",  emoji: "\u{2705}"  },
+  { key: "dafny",  label: "Dafny",           color: "text-teal-400",   emoji: "\u{1F510}" },
 ];
+
+const MAX_RETRIES   = 5;
+const RETRY_DELAY   = 6000;
+const WARMUP_WAIT   = 3000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export default function Home() {
   const [results,    setResults]    = useState({});
@@ -22,21 +30,61 @@ export default function Home() {
   const [phpResult,  setPhpResult]  = useState(null);
   const [sqlLoading, setSqlLoading] = useState(false);
   const [phpLoading, setPhpLoading] = useState(false);
+  const [warmupMsg,  setWarmupMsg]  = useState("");
+  const warmupDone = useRef(false);
 
   const callLang = useCallback(async (key) => {
     setLoading((p) => ({ ...p, [key]: true }));
-    try {
-      const r    = await fetch(BACKEND + "/api/" + key);
-      const data = await r.json();
-      setResults((p) => ({ ...p, [key]: data }));
-    } catch (e) {
-      setResults((p) => ({ ...p, [key]: { status: "error", result: String(e) } }));
-    } finally {
-      setLoading((p) => ({ ...p, [key]: false }));
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const r    = await fetch(BACKEND + "/api/" + key);
+        const data = await r.json();
+        setResults((p) => ({ ...p, [key]: data }));
+        setLoading((p) => ({ ...p, [key]: false }));
+        return;
+      } catch (e) {
+        if (attempt < MAX_RETRIES) {
+          setResults((p) => ({
+            ...p,
+            [key]: {
+              status: "warming",
+              result: `Service cold-starting — retry ${attempt + 1}/${MAX_RETRIES} in ${RETRY_DELAY / 1000}s...`,
+            },
+          }));
+          await sleep(RETRY_DELAY);
+        } else {
+          setResults((p) => ({
+            ...p,
+            [key]: {
+              status: "error",
+              result: `Failed after ${MAX_RETRIES + 1} attempts. ${String(e)}`,
+            },
+          }));
+        }
+      }
     }
+    setLoading((p) => ({ ...p, [key]: false }));
   }, []);
 
-  const callAll = () => LANGS.forEach(({ key }) => callLang(key));
+  const callAll = async () => {
+    if (!warmupDone.current) {
+      setWarmupMsg("Warming up backend service via /health...");
+      try {
+        await fetch(BACKEND + "/health");
+        await sleep(WARMUP_WAIT);
+        warmupDone.current = true;
+        setWarmupMsg("Backend ready — running all languages.");
+        await sleep(500);
+      } catch (_) {
+        setWarmupMsg("Health check failed — retries will run automatically.");
+      }
+    } else {
+      setWarmupMsg("");
+    }
+    LANGS.forEach(({ key }) => callLang(key));
+    setTimeout(() => setWarmupMsg(""), 5000);
+  };
 
   const runSql = async () => {
     setSqlLoading(true);
@@ -61,7 +109,7 @@ export default function Home() {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
-          code: "<?php $n=15; $a=0; $b=1; for($i=2;$i<=$n;$i++){$c=$a+$b;$a=$b;$b=$c;} echo \"PHP | fib(15)=$b\\n\";",
+          code: '<?php $n=15; $a=0; $b=1; for($i=2;$i<=$n;$i++){$c=$a+$b;$a=$b;$b=$c;} echo "PHP | fib(15)=$b\n";',
         }),
       });
       setPhpResult(await r.json());
@@ -171,9 +219,18 @@ export default function Home() {
 
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Backend Language Results</h2>
+            <div>
+              <h2 className="text-xl font-semibold">Backend Language Results</h2>
+              {warmupMsg && (
+                <p className="text-brand-400 text-xs mt-1 font-mono animate-pulse">{warmupMsg}</p>
+              )}
+            </div>
             <button className="btn-primary text-sm" onClick={callAll}>Run All</button>
           </div>
+          <p className="text-slate-500 text-xs mb-4">
+            Note: Render free tier services sleep after inactivity. Cold starts take 30–60 s.
+            Requests retry automatically up to {MAX_RETRIES} times.
+          </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {LANGS.map(({ key, label, color, emoji }) => (
               <LanguageCard
